@@ -1,7 +1,7 @@
 # Juju API Documentation
 
-**Generated:** 2026-01-18
-**Based on:** Runtime Dumps & Script Analysis (Updated with Remote Scan)
+**Generated:** 2026-01-19
+**Based on:** Runtime Dumps & Script Analysis (Updated with Remote Scan & Full Dump)
 
 ## 1. Global Functions
 
@@ -19,6 +19,8 @@
 | `juju.set_tab_text(tab, text)` | Rename a tab dynamically. |
 
 ### Configuration (Flags)
+> **Note:** For a complete list of all available flags, see [FLAGS_LIST.md](FLAGS_LIST.md).
+
 | Function | Description |
 | :--- | :--- |
 | `juju.get_flag(flag_name)` | Returns the value of a flag (boolean, number, string). |
@@ -63,6 +65,7 @@
 | `juju.set_ragebot_aim_position(vec3)` | Override aim position. |
 | `juju.get_silent_aim_position()` | Get silent aim target coordinate. |
 | `juju.set_silent_aim_position(vec3)` | Override silent aim target. |
+| `juju.set_aim_assist_position(vec3)` | Override aim assist target. |
 | `juju.get_legitbot_target()` | Get current legitbot target. |
 | `juju.set_legitbot_target(player)` | Set legitbot target. |
 
@@ -94,6 +97,7 @@ Connect to these using `juju.create_connection(juju.get_signal("SignalName"), ca
 | `on_player_knocked` | Player KO event. |
 | `on_local_knocked` | You were KO'd. |
 | `on_stomp` | Stomp execution event. |
+| `on_bounty_placed` | Fired when a bounty is placed on a player. |
 | **State** | |
 | `on_player_health_changed` | HP update (useful for health-based logic). |
 | `on_local_health_changed` | Your HP update. |
@@ -103,69 +107,26 @@ Connect to these using `juju.create_connection(juju.get_signal("SignalName"), ca
 | `on_local_reload` | You reloaded. |
 | `on_local_tool_equipped` | You equipped an item. |
 | `on_player_tool_equipped` | Enemy equipped an item. |
+| `on_local_character_loaded` | Local character fully loaded. |
+| `on_local_character_description_changed` | Local appearance changed. |
+| `on_theme_color_change` | UI theme color updated. |
 | **World/Player** | |
 | `on_player_added` | Player joined server. |
 | `on_player_character_added` | Player character spawned. |
+| `on_player_character_added_quick` | Fast spawn event? |
 | `on_vehicle_sat_in` | Entered a car. |
+| `on_player_crew_changed` | Player joined/left a crew. |
+| `on_player_role_changed` | Player role changed (e.g. Police/Criminal). |
+| `on_player_status_changed` | Custom status update. |
 | **Aimbot** | |
 | `on_ragebot_target_changed` | Target switch event (crucial for "Sticky" scripts). |
+| `on_ragebot_target_added` | Target added to whitelist/priority. |
+| `on_ragebot_target_removed` | Target removed from whitelist/priority. |
 | `on_legitbot_target_changed` | Legitbot target switch event. |
 
 ---
 
-## 3. Key Flags (Configuration)
-Use `juju.set_flag(flag, value)` to control these features.
-
-### Ragebot & Aimbot
-*   `ragebot` (bool): Master switch.
-*   `silent_aim` (bool)
-*   `auto_fire` (bool)
-*   `resolver` (bool): Anti-aim revolver.
-*   `backtrack` (bool): Backtrack enabled.
-*   `backtrack_length` (number): Time in ms (e.g. 200).
-*   `rapid_fire` (bool)
-*   `anti_sit` (bool): Prevent sitting?
-*   `target_selection_use_player_list` (bool)
-
-### Anti-Aim & Exploits
-*   `spinbot` (bool)
-*   `spinbot_speed` (number)
-*   `fake_position` (bool): Desync/Fake lag.
-*   `noclip` (bool)
-*   `flight` (bool)
-*   `speed` (bool)
-*   `speed_value` (number)
-*   `anti_stomp` (bool): Prevent being stomped?
-*   `anti_bag` (bool): Prevent being bagged.
-
-### Void Exploits
-*   `void_spam_enabled` (bool)
-*   `void_spam_pattern` (string)
-*   `void_method` (string)
-*   `void_assist_method` (string)
-*   `void_stay_invuln` (bool): Don't void if enemy is in godmode.
-*   `void_stay_knocked` (bool): Don't void if enemy is KO.
-*   `void_stay_low_hp` (bool)
-
-### Visuals (ESP)
-*   `esp` (bool)
-*   `box` (bool)
-*   `name` (bool)
-*   `health_bar` (bool)
-*   `armor_bar` (bool)
-*   `chams` (bool)
-*   `tracers` (bool)
-*   `highlight` (bool)
-
-### Automation
-*   `auto_buy_armor` (bool)
-*   `auto_buy_ammo` (bool)
-*   `auto_reload` (bool)
-*   `auto_heal` (bool)
-*   `auto_stomp` (bool): Master switch for built-in auto stomp.
-*   `trash_talk` (bool)
-
-## 5. Da Hood Internals (Remotes)
+## 3. Da Hood Internals (Remotes)
 **Discovered via `ReplicatedStorage` scan.**
 
 ### Core Remotes
@@ -186,6 +147,12 @@ Use `juju.set_flag(flag, value)` to control these features.
 | `ToggleLeaderboardVisibility` | `Remotes` | RemoteEvent | |
 | `IronmanSuit` | `Events` | RemoteEvent | Possibly admin/special event. |
 | `Luffy` | `Remotes` | RemoteEvent | |
+| `CasinoVisuals` | `Remotes` | RemoteEvent | Casino effects. |
+| `CasinoRR` | `Remotes` | RemoteFunction | Casino logic. |
+| `LightSwordRemote` | `Remotes` | RemoteEvent | Star Wars event? |
+| `Replication` | `Events` | RemoteEvent | Character/State replication. |
+| `PacketReceiver` | `Events` | RemoteEvent | Network packet handling. |
+| `Logging` | `ReplicatedStorage` | RemoteEvent | Anti-cheat/Error logging. |
 
 ### Global Environment (`getgenv`)
 *   `_JUJU`: Likely the internal table for configuration or state.
@@ -193,8 +160,7 @@ Use `juju.set_flag(flag, value)` to control these features.
 
 ---
 
-## 6. Scripting Patterns (Confirmed)
-*(From previous analysis)*
+## 4. Scripting Patterns
 
 ### Sticky Glue (Target Follow)
 ```lua
